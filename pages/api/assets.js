@@ -1,4 +1,9 @@
-import { downloadAsset, uploadAsset, getToken } from "@/lib/assets";
+import {
+  downloadAsset,
+  uploadAsset,
+  getReadToken,
+  getWriteToken,
+} from "@/lib/assets";
 
 function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -8,11 +13,28 @@ export default async function handler(req, res) {
   switch (req.method) {
     case "GET":
       try {
-        const token = await getToken();
-        //Get all assets
+        // For fetching assets from source repository, we can use the public API
+        // or the Write API Key if it has read permissions
+        const sourceRepo = process.env.Source_Repo;
+
+        if (!sourceRepo) {
+          return res.status(400).json({
+            reason: "Source_Repo environment variable is not set",
+          });
+        }
+
         const myHeaders = new Headers();
-        myHeaders.append("repository", process.env.Source_Repo);
-        myHeaders.append("Authorization", `Bearer ${token}`);
+        myHeaders.append("repository", sourceRepo);
+
+        // Use read token for source repository
+        try {
+          const token = await getReadToken();
+          myHeaders.append("Authorization", `Bearer ${token}`);
+        } catch (tokenError) {
+          console.log(
+            "Failed to get read token, trying without authentication for public repository"
+          );
+        }
 
         const requestOptions = {
           method: "GET",
@@ -24,6 +46,15 @@ export default async function handler(req, res) {
           "https://asset-api.prismic.io/assets?limit=1000",
           requestOptions
         );
+
+        if (!ans.ok) {
+          return res.status(ans.status).json({
+            reason: "Failed to fetch assets",
+            status: ans.status,
+            statusText: ans.statusText,
+          });
+        }
+
         const assets = await ans.text();
         return res.status(200).json({ assets });
       } catch (err) {
@@ -34,6 +65,14 @@ export default async function handler(req, res) {
     case "POST":
       try {
         const { assets } = req.body;
+
+        // Check if assets and assets.items exist
+        if (!assets || !assets.items || !Array.isArray(assets.items)) {
+          return res.status(400).json({
+            reason: "Invalid assets data",
+            err: "assets.items is not an array or is undefined",
+          });
+        }
 
         for (let i = 0; i < assets.items.length; i++) {
           if (!assets.items[i]?.url) {
@@ -52,10 +91,19 @@ export default async function handler(req, res) {
         return res.status(400).json({ reason: "server error", err });
       }
     case "PUT":
-      const { assets } = req.body;
-      const newAssets = [];
-      const token = await getToken();
       try {
+        const { assets } = req.body;
+        const newAssets = [];
+        const token = await getWriteToken();
+
+        // Check if assets and assets.items exist
+        if (!assets || !assets.items || !Array.isArray(assets.items)) {
+          return res.status(400).json({
+            reason: "Invalid assets data",
+            err: "assets.items is not an array or is undefined",
+          });
+        }
+
         for (let i = 0; i < assets.items.length; i++) {
           await uploadAsset(
             assets.items[i].id,
