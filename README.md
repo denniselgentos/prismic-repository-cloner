@@ -132,3 +132,7 @@ Limitations:
 ## License
 
 MIT
+
+
+## TIP:
+I synced the content types and slices with slicemachine. Todo is to get the destination token/login for these types if needed, check pages/api/documents.js
