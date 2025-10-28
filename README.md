@@ -47,17 +47,7 @@ This app migrates from a source Prismic repository to a destination repository:
 
 ## Environment Variables
 
-Create a `.env.local` file and set the following variables:
-
-- `Source_Repo` — source repository name (e.g. `my-source-repo`)
-- `Destination_Repo` — destination repository name (e.g. `my-destination-repo`)
-- `Project_Path` — absolute path to the project root on your machine (used for asset file reads during upload)
-- `Prismic_Write_API_Key` — write API key for the destination repository (assets upload and checks)
-- `Migration_Api_Key` — Prismic Migration API key (documents migration)
-- `Repo_Login_Email` — email for authenticating read access (source)
-- `Repo_Login_Password` — password for authenticating read access (source)
-- `Prismic_Email` — email for authenticating destination (fallback when needed)
-- `Prismic_Password` — password for authenticating destination (fallback when needed)
+Create a `.env.local` file based on .env.local.example...
 
 Notes:
 

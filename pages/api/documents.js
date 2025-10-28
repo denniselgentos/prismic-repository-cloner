@@ -19,15 +19,20 @@ export default async function handler(req, res) {
 
       const token = await getToken();
       //Get all shared slices
+      // Temp disable all slices, this part is correct
+      /*
       const slicesRes = await fetch("https://customtypes.prismic.io/slices", {
         headers: {
           repository: process.env.Source_Repo,
           Authorization: `Bearer ${token}`,
         },
       });
-      const slices = await slicesRes.json();
+      const slices = await slicesRes.json()
+      */
 
       //Migrate all slices
+      // Temp disable slices, the token is the source token, this must be the destination token.
+      /*
       for (let i = 0; i < slices.length; i++) {
         await fetch("https://customtypes.prismic.io/slices/insert", {
           method: "POST",
@@ -39,8 +44,12 @@ export default async function handler(req, res) {
           body: JSON.stringify(slices[i]),
         });
       }
+      */
+
       //return res.status(200).json({ ok: true });
       //Get all types
+      // Temp disable customtypes, the token is the source token, this must be the destination token.
+        /*
       const typesRes = await fetch(
         "https://customtypes.prismic.io/customtypes",
         {
@@ -64,6 +73,7 @@ export default async function handler(req, res) {
           body: JSON.stringify(types[i]),
         });
       }
+      */
 
       //Get all documents
       const client = prismic.createClient(process.env.Source_Repo, {});
@@ -145,6 +155,12 @@ export default async function handler(req, res) {
 
         // Safely extract document name with proper error handling
         let documentName = `document ${i}`;
+
+        // Sometime it's directly into data, instead of data.title.
+        if (allDocuments[i].data && allDocuments[i].data.title){
+          documentName = allDocuments[i].data.title;
+        }
+
         try {
           if (
             allDocuments[i].data &&
@@ -259,9 +275,8 @@ export default async function handler(req, res) {
             method: "POST",
             headers: {
               repository: process.env.Destination_Repo,
-              "x-api-key": process.env.Migration_Api_Key,
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${process.env.Migration_Api_Key}`,
             },
             body: JSON.stringify(migrationPayload),
           });
